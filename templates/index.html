@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI-Powered Heart Disease Risk Assessment Tool using K-Nearest Neighbors Machine Learning Model.">
+    <title>CardioShield AI | Heart Disease Risk Prediction</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- App Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="background-glow"></div>
+    
+    <div class="app-container">
+        <!-- App Header -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-heart-pulse"></i>
+                </div>
+                <div>
+                    <h1>CardioShield <span class="accent-text">AI</span></h1>
+                    <p class="subtitle">Clinical Heart Disease Risk Assessment System</p>
+                </div>
+            </div>
+            <div class="badge-status">
+                <span class="pulse-dot"></span>
+                <span>KNN Model Active</span>
+            </div>
+        </header>
+
+        <!-- Presets Toolbar -->
+        <div class="preset-card glass-panel">
+            <div class="preset-title">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Quick Test Profiles:
+            </div>
+            <div class="preset-buttons">
+                <button type="button" class="btn-preset btn-low" id="btnPresetHealthy">
+                    <i class="fa-solid fa-shield-heart"></i> Low Risk Sample
+                </button>
+                <button type="button" class="btn-preset btn-high" id="btnPresetHighRisk">
+                    <i class="fa-solid fa-triangle-exclamation"></i> High Risk Sample
+                </button>
+                <button type="button" class="btn-preset btn-borderline" id="btnPresetBorderline">
+                    <i class="fa-solid fa-scale-unbalanced"></i> Moderate Sample
+                </button>
+                <button type="button" class="btn-preset btn-reset" id="btnReset">
+                    <i class="fa-solid fa-rotate-left"></i> Reset Form
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Workspace Grid -->
+        <div class="workspace-grid">
+            
+            <!-- Left Side: Form Controls -->
+            <main class="form-container glass-panel">
+                <form id="predictionForm" class="prediction-form" autocomplete="off">
+                    
+                    <!-- Group 1: Patient Vitals & Demographics -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <i class="fa-solid fa-user-doctor"></i>
+                            <h3>1. Patient Demographics & Vitals</h3>
+                        </div>
+                        
+                        <div class="input-grid">
+                            <!-- Age -->
+                            <div class="input-group">
+                                <label for="age"><i class="fa-solid fa-calendar"></i> Age (Years)</label>
+                                <input type="number" id="age" name="age" min="18" max="100" value="50" required placeholder="e.g. 52">
+                                <span class="input-hint">Range: 18 - 100 yrs</span>
+                            </div>
+
+                            <!-- Sex -->
+                            <div class="input-group">
+                                <label for="sex"><i class="fa-solid fa-venus-mars"></i> Biological Sex</label>
+                                <select id="sex" name="sex" required>
+                                    <option value="M" selected>Male (M)</option>
+                                    <option value="F">Female (F)</option>
+                                </select>
+                                <span class="input-hint">Select biological sex</span>
+                            </div>
+
+                            <!-- Resting BP -->
+                            <div class="input-group">
+                                <label for="resting_bp"><i class="fa-solid fa-gauge-high"></i> Resting BP (mm Hg)</label>
+                                <input type="number" id="resting_bp" name="resting_bp" min="70" max="220" value="130" required placeholder="e.g. 120">
+                                <span class="input-hint">Resting blood pressure</span>
+                            </div>
+
+                            <!-- Cholesterol -->
+                            <div class="input-group">
+                                <label for="cholesterol"><i class="fa-solid fa-droplet"></i> Serum Cholesterol (mg/dl)</label>
+                                <input type="number" id="cholesterol" name="cholesterol" min="0" max="600" value="220" required placeholder="e.g. 240">
+                                <span class="input-hint">Enter 0 if unknown (auto-imputed)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Group 2: Cardiac Symptoms & Metrics -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <i class="fa-solid fa-stethoscope"></i>
+                            <h3>2. Cardiac Symptoms & Blood Metrics</h3>
+                        </div>
+                        
+                        <div class="input-grid">
+                            <!-- Chest Pain Type -->
+                            <div class="input-group input-span-2">
+                                <label for="chest_pain"><i class="fa-solid fa-notes-medical"></i> Chest Pain Type</label>
+                                <select id="chest_pain" name="chest_pain" required>
+                                    <option value="ASY" selected>Asymptomatic Pain (ASY)</option>
+                                    <option value="ATA">Atypical Angina (ATA)</option>
+                                    <option value="NAP">Non-Anginal Pain (NAP)</option>
+                                    <option value="TA">Typical Angina (TA)</option>
+                                </select>
+                                <span class="input-hint">Clinical chest pain classification</span>
+                            </div>
+
+                            <!-- Fasting BS -->
+                            <div class="input-group">
+                                <label for="fasting_bs"><i class="fa-solid fa-cubes-stacked"></i> Fasting Blood Sugar</label>
+                                <select id="fasting_bs" name="fasting_bs" required>
+                                    <option value="0" selected>Normal (&le; 120 mg/dl)</option>
+                                    <option value="1">Elevated (&gt; 120 mg/dl)</option>
+                                </select>
+                                <span class="input-hint">Fasting blood sugar test</span>
+                            </div>
+
+                            <!-- Resting ECG -->
+                            <div class="input-group">
+                                <label for="resting_ecg"><i class="fa-solid fa-wave-square"></i> Resting ECG Result</label>
+                                <select id="resting_ecg" name="resting_ecg" required>
+                                    <option value="Normal" selected>Normal</option>
+                                    <option value="ST">ST-T Wave Abnormality (ST)</option>
+                                    <option value="LVH">Left Ventricular Hypertrophy (LVH)</option>
+                                </select>
+                                <span class="input-hint">Resting electrocardiogram</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Group 3: Exercise Test & ECG Slope -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <i class="fa-solid fa-person-running"></i>
+                            <h3>3. Exercise Stress Test Parameters</h3>
+                        </div>
+                        
+                        <div class="input-grid">
+                            <!-- Max HR -->
+                            <div class="input-group">
+                                <label for="max_hr"><i class="fa-solid fa-heart"></i> Max Heart Rate (bpm)</label>
+                                <input type="number" id="max_hr" name="max_hr" min="60" max="220" value="150" required placeholder="e.g. 165">
+                                <span class="input-hint">Maximum heart rate achieved</span>
+                            </div>
+
+                            <!-- Exercise Angina -->
+                            <div class="input-group">
+                                <label for="exercise_angina"><i class="fa-solid fa-person-dots-from-line"></i> Exercise Angina</label>
+                                <select id="exercise_angina" name="exercise_angina" required>
+                                    <option value="N" selected>No (No exercise angina)</option>
+                                    <option value="Y">Yes (Induced by exercise)</option>
+                                </select>
+                                <span class="input-hint">Exercise induced chest pain</span>
+                            </div>
+
+                            <!-- Oldpeak -->
+                            <div class="input-group">
+                                <label for="oldpeak"><i class="fa-solid fa-chart-line"></i> ST Depression (Oldpeak)</label>
+                                <input type="number" id="oldpeak" name="oldpeak" step="0.1" min="-2.0" max="6.5" value="0.0" required placeholder="e.g. 1.2">
+                                <span class="input-hint">ST depression relative to rest</span>
+                            </div>
+
+                            <!-- ST Slope -->
+                            <div class="input-group">
+                                <label for="st_slope"><i class="fa-solid fa-arrow-trend-up"></i> Peak ST Segment Slope</label>
+                                <select id="st_slope" name="st_slope" required>
+                                    <option value="Up" selected>Upsloping (Up)</option>
+                                    <option value="Flat">Flat (Flat)</option>
+                                    <option value="Down">Downsloping (Down)</option>
+                                </select>
+                                <span class="input-hint">Slope of peak exercise ST segment</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Action Button -->
+                    <div class="form-actions">
+                        <button type="submit" id="btnSubmit" class="btn-submit">
+                            <span class="btn-text"><i class="fa-solid fa-microchip"></i> Analyze Risk Assessment</span>
+                            <span class="btn-spinner hidden"><i class="fa-solid fa-circle-notch fa-spin"></i> Processing Model...</span>
+                        </button>
+                    </div>
+                </form>
+            </main>
+
+            <!-- Right Side: Real-time Results Card -->
+            <aside class="results-container">
+                <div id="resultsCard" class="results-card glass-panel empty-state">
+                    
+                    <!-- Default Empty State -->
+                    <div id="emptyResults" class="results-empty">
+                        <div class="empty-icon">
+                            <i class="fa-solid fa-laptop-medical"></i>
+                        </div>
+                        <h3>Ready for Analysis</h3>
+                        <p>Fill in the patient clinical parameters on the left or select a sample profile above to generate AI risk assessment.</p>
+                    </div>
+
+                    <!-- Active Results Display (Hidden by default) -->
+                    <div id="activeResults" class="results-active hidden">
+                        <div class="results-header">
+                            <span class="results-tag">AI Prediction Summary</span>
+                            <span id="riskBadge" class="risk-badge badge-low">Low Risk</span>
+                        </div>
+
+                        <!-- Gauge & Meter -->
+                        <div class="meter-wrapper">
+                            <div class="meter-circle">
+                                <svg class="meter-svg" viewBox="0 0 100 100">
+                                    <circle class="meter-bg" cx="50" cy="50" r="42"></circle>
+                                    <circle id="meterProgress" class="meter-fill" cx="50" cy="50" r="42" stroke-dasharray="264" stroke-dashoffset="264"></circle>
+                                </svg>
+                                <div class="meter-content">
+                                    <span id="riskScoreValue" class="score-number">0%</span>
+                                    <span class="score-label">Risk Level</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Probability Bar -->
+                        <div class="prob-section">
+                            <div class="prob-header">
+                                <span>Model Confidence Split</span>
+                                <span id="confidenceVal">100%</span>
+                            </div>
+                            <div class="prob-bar-track">
+                                <div id="probBarLow" class="prob-bar-fill bar-low" style="width: 50%;"></div>
+                                <div id="probBarHigh" class="prob-bar-fill bar-high" style="width: 50%;"></div>
+                            </div>
+                            <div class="prob-labels">
+                                <span class="text-low"><i class="fa-solid fa-circle"></i> Low: <strong id="probLowText">50%</strong></span>
+                                <span class="text-high"><i class="fa-solid fa-circle"></i> High: <strong id="probHighText">50%</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Risk Factors List -->
+                        <div class="risk-factors-card">
+                            <h4><i class="fa-solid fa-list-check"></i> Primary Observations</h4>
+                            <ul id="riskFactorsList" class="factors-list">
+                                <li>No major risk factors detected.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Disclaimer -->
+                        <div class="disclaimer-note">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <p>This automated assessment uses a K-Nearest Neighbors ML model. Clinical consultation by a certified cardiologist is recommended for diagnostic evaluation.</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('predictionForm');
+            const btnSubmit = document.getElementById('btnSubmit');
+            const btnText = btnSubmit.querySelector('.btn-text');
+            const btnSpinner = btnSubmit.querySelector('.btn-spinner');
+
+            const emptyResults = document.getElementById('emptyResults');
+            const activeResults = document.getElementById('activeResults');
+
+            const riskBadge = document.getElementById('riskBadge');
+            const riskScoreValue = document.getElementById('riskScoreValue');
+            const meterProgress = document.getElementById('meterProgress');
+            
+            const confidenceVal = document.getElementById('confidenceVal');
+            const probBarLow = document.getElementById('probBarLow');
+            const probBarHigh = document.getElementById('probBarHigh');
+            const probLowText = document.getElementById('probLowText');
+            const probHighText = document.getElementById('probHighText');
+            const riskFactorsList = document.getElementById('riskFactorsList');
+
+            // Preset Buttons
+            document.getElementById('btnPresetHealthy').addEventListener('click', () => {
+                setFormValues({
+                    age: 40,
+                    sex: 'M',
+                    chest_pain: 'ATA',
+                    resting_bp: 140,
+                    cholesterol: 289,
+                    fasting_bs: '0',
+                    resting_ecg: 'Normal',
+                    max_hr: 172,
+                    exercise_angina: 'N',
+                    oldpeak: 0.0,
+                    st_slope: 'Up'
+                });
+            });
+
+            document.getElementById('btnPresetHighRisk').addEventListener('click', () => {
+                setFormValues({
+                    age: 58,
+                    sex: 'M',
+                    chest_pain: 'ASY',
+                    resting_bp: 160,
+                    cholesterol: 286,
+                    fasting_bs: '1',
+                    resting_ecg: 'LVH',
+                    max_hr: 115,
+                    exercise_angina: 'Y',
+                    oldpeak: 2.6,
+                    st_slope: 'Flat'
+                });
+            });
+
+            document.getElementById('btnPresetBorderline').addEventListener('click', () => {
+                setFormValues({
+                    age: 49,
+                    sex: 'F',
+                    chest_pain: 'NAP',
+                    resting_bp: 130,
+                    cholesterol: 215,
+                    fasting_bs: '0',
+                    resting_ecg: 'Normal',
+                    max_hr: 145,
+                    exercise_angina: 'N',
+                    oldpeak: 1.0,
+                    st_slope: 'Flat'
+                });
+            });
+
+            document.getElementById('btnReset').addEventListener('click', () => {
+                form.reset();
+                emptyResults.classList.remove('hidden');
+                activeResults.classList.add('hidden');
+            });
+
+            function setFormValues(data) {
+                for (const key in data) {
+                    const el = document.getElementById(key);
+                    if (el) el.value = data[key];
+                }
+            }
+
+            // AJAX Form Submit
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                // Show loading spinner
+                btnText.classList.add('hidden');
+                btnSpinner.classList.remove('hidden');
+                btnSubmit.disabled = true;
+
+                const formData = new FormData(form);
+                const payload = {};
+                formData.forEach((value, key) => payload[key] = value);
+
+                try {
+                    const response = await fetch('/predict', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        renderResults(result);
+                    } else {
+                        alert('Prediction error: ' + (result.error || 'Unknown error'));
+                    }
+                } catch (err) {
+                    alert('Server connection error. Make sure Flask app is running.');
+                } finally {
+                    btnText.classList.remove('hidden');
+                    btnSpinner.classList.add('hidden');
+                    btnSubmit.disabled = false;
+                }
+            });
+
+            function renderResults(data) {
+                emptyResults.classList.add('hidden');
+                activeResults.classList.remove('hidden');
+
+                const isHigh = data.prediction === 1;
+                const score = data.risk_percentage;
+
+                // Update badge
+                riskBadge.textContent = isHigh ? 'HIGH RISK DETECTED' : 'LOW RISK OF HEART DISEASE';
+                riskBadge.className = 'risk-badge ' + (isHigh ? 'badge-high' : 'badge-low');
+
+                // Animate score counter
+                animateCounter(riskScoreValue, score, '%');
+
+                // Update circular SVG meter
+                // Circumference is 2 * pi * 42 = ~264
+                const circumference = 264;
+                const offset = circumference - (circumference * (score / 100));
+                meterProgress.style.strokeDashoffset = offset;
+                meterProgress.style.stroke = isHigh ? '#ff416c' : '#38ef7d';
+
+                // Update confidence split
+                confidenceVal.textContent = data.confidence + '%';
+                probBarLow.style.width = data.probabilities.low_risk + '%';
+                probBarHigh.style.width = data.probabilities.high_risk + '%';
+
+                probLowText.textContent = data.probabilities.low_risk + '%';
+                probHighText.textContent = data.probabilities.high_risk + '%';
+
+                // Render risk factors
+                riskFactorsList.innerHTML = '';
+                if (data.risk_factors && data.risk_factors.length > 0) {
+                    data.risk_factors.forEach(factor => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<i class="fa-solid fa-triangle-exclamation factor-icon"></i> ${factor}`;
+                        riskFactorsList.appendChild(li);
+                    });
+                } else {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<i class="fa-solid fa-circle-check factor-icon-good"></i> All evaluated vitals within normal parameters.`;
+                    riskFactorsList.appendChild(li);
+                }
+            }
+
+            function animateCounter(element, targetValue, suffix = '') {
+                let start = 0;
+                const duration = 600;
+                const startTime = performance.now();
+
+                function update(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const currentVal = (progress * targetValue).toFixed(1);
+                    element.textContent = currentVal + suffix;
+
+                    if (progress < 1) {
+                        requestAnimationFrame(update);
+                    }
+                }
+                requestAnimationFrame(update);
+            }
+        });
+    </script>
+</body>
+</html>
